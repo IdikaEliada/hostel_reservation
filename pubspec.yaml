@@ -38,6 +38,8 @@ dependencies:
   firebase_auth: ^6.1.4
   cloud_firestore: ^6.1.2
   go_router: ^17.1.0
+  http: ^1.6.0
+  webview_flutter: ^4.13.1
 
 dev_dependencies:
   flutter_test:
