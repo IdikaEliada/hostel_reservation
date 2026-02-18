@@ -14,6 +14,7 @@ class RoomSelectionScreen extends StatefulWidget {
 }
 
 class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
+  Map<String, dynamic>? _selectedRoomData; // Added
   String? _selectedRoomTypeId;
   String? _selectedRoomId;
 
@@ -294,16 +295,19 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     );
   }
 
-  Future<void> _initiatePayment(Map<String, dynamic> roomData, String roomId) async {
+  Future<void> _initiatePayment(
+    Map<String, dynamic> roomData,
+    String roomId,
+  ) async {
     print(roomData);
     // Get room price
-    int price = roomData['price'] is int 
-        ? roomData['price'] 
+    int price = roomData['price'] is int
+        ? roomData['price']
         : int.tryParse(roomData['price'].toString()) ?? 1000;
 
     // Generate unique reference
     final reference = paystackService.generateReference();
-    
+
     // Use test email - NO LOGIN REQUIRED
     const testEmail = 'customer@example.com';
 
@@ -327,9 +331,9 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     if (paymentSuccessful == true && mounted) {
       setState(() {
         _selectedRoomId = null;
-        _selectedRoomData = null;
+        //_selectedRoomData = null;
       });
-      
+
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
           content: Text('Room booked successfully! 🎉'),

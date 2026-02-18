@@ -45,7 +45,10 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       context: context,
       builder: (ctx) => AlertDialog(
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        title: const Text('Log Out', style: TextStyle(fontWeight: FontWeight.w700)),
+        title: const Text(
+          'Log Out',
+          style: TextStyle(fontWeight: FontWeight.w700),
+        ),
         content: const Text('Are you sure you want to log out?'),
         actions: [
           TextButton(
@@ -56,7 +59,9 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.red[700],
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(8),
+              ),
             ),
             onPressed: () => Navigator.pop(ctx, true),
             child: const Text('Log Out'),
@@ -91,7 +96,14 @@ class _UserProfileScreenState extends State<UserProfileScreen>
                   children: [
                     _buildTabBar(),
                     _buildTabContent(userData),
-                    _buildTransactionSection(),
+                    AnimatedBuilder(
+                      animation: _tabController,
+                      builder: (context, _) {
+                        if (_tabController.index == 0)
+                          return const SizedBox.shrink();
+                        return _buildTransactionSection();
+                      },
+                    ),
                     _buildMenuSection(),
                   ],
                 ),
@@ -280,10 +292,7 @@ class _UserProfileScreenState extends State<UserProfileScreen>
             firestore: _firestore,
           );
         } else {
-          return _HostelDetailsTab(
-            userId: _user?.uid,
-            firestore: _firestore,
-          );
+          return _HostelDetailsTab(userId: _user?.uid, firestore: _firestore);
         }
       },
     );
@@ -297,16 +306,19 @@ class _UserProfileScreenState extends State<UserProfileScreen>
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          const _SectionHeader(title: 'Transaction History', icon: Icons.receipt_long_rounded),
+          const _SectionHeader(
+            title: 'Transaction History',
+            icon: Icons.receipt_long_rounded,
+          ),
           const SizedBox(height: 10),
           StreamBuilder<QuerySnapshot>(
             stream: _user != null
                 ? _firestore
-                    .collection('transactions')
-                    .where('userId', isEqualTo: _user!.uid)
-                    .orderBy('createdAt', descending: true)
-                    .limit(5)
-                    .snapshots()
+                      .collection('transactions')
+                      .where('userId', isEqualTo: _user!.uid)
+                      .orderBy('createdAt', descending: true)
+                      .limit(5)
+                      .snapshots()
                 : const Stream.empty(),
             builder: (context, snap) {
               if (snap.connectionState == ConnectionState.waiting) {
@@ -535,7 +547,9 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
     super.initState();
     _nameCtrl = TextEditingController(text: widget.userData?['name'] ?? '');
     _phoneCtrl = TextEditingController(text: widget.userData?['phone'] ?? '');
-    _locationCtrl = TextEditingController(text: widget.userData?['location'] ?? '');
+    _locationCtrl = TextEditingController(
+      text: widget.userData?['location'] ?? '',
+    );
   }
 
   @override
@@ -570,7 +584,9 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
           content: const Text('Profile updated!'),
           backgroundColor: _kGreen,
           behavior: SnackBarBehavior.floating,
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+          shape: RoundedRectangleBorder(
+            borderRadius: BorderRadius.circular(10),
+          ),
         ),
       );
     }
@@ -615,7 +631,10 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
                   }
                 },
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 12,
+                    vertical: 6,
+                  ),
                   decoration: BoxDecoration(
                     color: _isEditing ? _kGreen : _kGreenPale,
                     borderRadius: BorderRadius.circular(20),
@@ -650,14 +669,28 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
             const SizedBox(height: 10),
             _editField(_locationCtrl, 'Location', Icons.location_on_outlined),
           ] else ...[
-            _infoRow(Icons.person_rounded, 'Name',
-                widget.userData?['name'] ?? 'Not set'),
-            _infoRow(Icons.email_rounded, 'Email',
-                widget.userData?['email'] ?? FirebaseAuth.instance.currentUser?.email ?? 'Not set'),
-            _infoRow(Icons.phone_rounded, 'Phone',
-                widget.userData?['phone'] ?? 'Not set'),
-            _infoRow(Icons.location_on_rounded, 'Location',
-                widget.userData?['location'] ?? 'Not set'),
+            _infoRow(
+              Icons.person_rounded,
+              'Name',
+              widget.userData?['name'] ?? 'Not set',
+            ),
+            _infoRow(
+              Icons.email_rounded,
+              'Email',
+              widget.userData?['email'] ??
+                  FirebaseAuth.instance.currentUser?.email ??
+                  'Not set',
+            ),
+            _infoRow(
+              Icons.phone_rounded,
+              'Phone',
+              widget.userData?['phone'] ?? 'Not set',
+            ),
+            _infoRow(
+              Icons.location_on_rounded,
+              'Location',
+              widget.userData?['location'] ?? 'Not set',
+            ),
           ],
         ],
       ),
@@ -672,7 +705,10 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
         children: [
           Container(
             padding: const EdgeInsets.all(7),
-            decoration: const BoxDecoration(color: _kGreenPale, shape: BoxShape.circle),
+            decoration: const BoxDecoration(
+              color: _kGreenPale,
+              shape: BoxShape.circle,
+            ),
             child: Icon(icon, size: 16, color: _kGreen),
           ),
           const SizedBox(width: 12),
@@ -680,12 +716,19 @@ class _UserDetailsTabState extends State<_UserDetailsTab> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(label,
-                    style: const TextStyle(color: _kGreyText, fontSize: 11)),
+                Text(
+                  label,
+                  style: const TextStyle(color: _kGreyText, fontSize: 11),
+                ),
                 const SizedBox(height: 1),
-                Text(value,
-                    style: const TextStyle(
-                        color: _kDark, fontWeight: FontWeight.w600, fontSize: 14)),
+                Text(
+                  value,
+                  style: const TextStyle(
+                    color: _kDark,
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                  ),
+                ),
               ],
             ),
           ),
@@ -744,10 +787,10 @@ class _HostelDetailsTab extends StatelessWidget {
       child: StreamBuilder<QuerySnapshot>(
         stream: userId != null
             ? firestore
-                .collection('bookings')
-                .where('userId', isEqualTo: userId)
-                .orderBy('createdAt', descending: true)
-                .snapshots()
+                  .collection('bookings')
+                  .where('userId', isEqualTo: userId)
+                  .orderBy('createdAt', descending: true)
+                  .snapshots()
             : const Stream.empty(),
         builder: (context, snap) {
           if (snap.connectionState == ConnectionState.waiting) {
@@ -777,7 +820,11 @@ class _HostelDetailsTab extends StatelessWidget {
               const SizedBox(height: 12),
               ...docs.map((doc) {
                 final data = doc.data() as Map<String, dynamic>;
-                return _BookingTile(data: data, docId: doc.id, firestore: firestore);
+                return _BookingTile(
+                  data: data,
+                  docId: doc.id,
+                  firestore: firestore,
+                );
               }),
             ],
           );
@@ -908,9 +955,7 @@ class _TransactionTile extends StatelessWidget {
           Container(
             padding: const EdgeInsets.all(8),
             decoration: BoxDecoration(
-              color: isSuccess
-                  ? _kGreenPale
-                  : Colors.red.withOpacity(0.1),
+              color: isSuccess ? _kGreenPale : Colors.red.withOpacity(0.1),
               shape: BoxShape.circle,
             ),
             child: Icon(
@@ -924,13 +969,21 @@ class _TransactionTile extends StatelessWidget {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                Text(type,
-                    style: const TextStyle(
-                        fontWeight: FontWeight.w600, fontSize: 14, color: _kDark)),
-                Text(status,
-                    style: TextStyle(
-                        fontSize: 12,
-                        color: isSuccess ? _kGreen : Colors.red)),
+                Text(
+                  type,
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w600,
+                    fontSize: 14,
+                    color: _kDark,
+                  ),
+                ),
+                Text(
+                  status,
+                  style: TextStyle(
+                    fontSize: 12,
+                    color: isSuccess ? _kGreen : Colors.red,
+                  ),
+                ),
               ],
             ),
           ),
@@ -987,10 +1040,16 @@ class _BookingTile extends StatelessWidget {
           child: Row(
             children: [
               ClipRRect(
-                borderRadius: const BorderRadius.horizontal(left: Radius.circular(10)),
+                borderRadius: const BorderRadius.horizontal(
+                  left: Radius.circular(10),
+                ),
                 child: imageUrl != null
-                    ? Image.network(imageUrl,
-                        width: 72, height: 72, fit: BoxFit.cover)
+                    ? Image.network(
+                        imageUrl,
+                        width: 72,
+                        height: 72,
+                        fit: BoxFit.cover,
+                      )
                     : Container(
                         width: 72,
                         height: 72,
@@ -1005,12 +1064,19 @@ class _BookingTile extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(hostelName,
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w700, fontSize: 14, color: _kDark)),
+                      Text(
+                        hostelName,
+                        style: const TextStyle(
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                          color: _kDark,
+                        ),
+                      ),
                       const SizedBox(height: 2),
-                      Text(roomName,
-                          style: const TextStyle(color: _kGreyText, fontSize: 12)),
+                      Text(
+                        roomName,
+                        style: const TextStyle(color: _kGreyText, fontSize: 12),
+                      ),
                     ],
                   ),
                 ),
@@ -1018,7 +1084,10 @@ class _BookingTile extends StatelessWidget {
               Padding(
                 padding: const EdgeInsets.only(right: 12),
                 child: Container(
-                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  padding: const EdgeInsets.symmetric(
+                    horizontal: 8,
+                    vertical: 4,
+                  ),
                   decoration: BoxDecoration(
                     color: isActive ? _kGreenPale : Colors.grey[100],
                     borderRadius: BorderRadius.circular(8),
@@ -1070,8 +1139,10 @@ class _EmptyCard extends StatelessWidget {
           children: [
             Icon(icon, color: _kGreenLight, size: 36),
             const SizedBox(height: 8),
-            Text(message,
-                style: const TextStyle(color: _kGreyText, fontSize: 14)),
+            Text(
+              message,
+              style: const TextStyle(color: _kGreyText, fontSize: 14),
+            ),
           ],
         ),
       ),

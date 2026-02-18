@@ -61,6 +61,7 @@ final _router = GoRouter(
         final data = state.extra as Map<String, dynamic>?;
         return AddEditRoomScreen(roomId: id, initialData: data);
       },
+    ),
     //user profile route
     GoRoute(
       path: '/profile',
