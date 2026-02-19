@@ -67,6 +67,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     setState(() => _isLoading = true);
 
     try {
+      print('pass' + _passwordController.text);
       // Create user with Firebase Auth
       final UserCredential userCredential = await FirebaseAuth.instance
           .createUserWithEmailAndPassword(
@@ -193,29 +194,46 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         // Name Row
                         Row(
                           children: [
-                            Expanded(child: _buildInput('First Name')),
+                            Expanded(
+                              child: _buildInput(
+                                'First Name',
+                                controller: _firstNameController,
+                              ),
+                            ),
                             const SizedBox(width: 16),
-                            Expanded(child: _buildInput('Last Name')),
+                            Expanded(
+                              child: _buildInput(
+                                'Last Name',
+                                controller: _lastNameController,
+                              ),
+                            ),
                           ],
                         ),
                         const SizedBox(height: 16),
-                        _buildInput('Reg Number', hint: 'e.g. 2021/12345'),
+                        _buildInput(
+                          'Reg Number',
+                          hint: 'e.g. 2021/12345',
+                          controller: _regNumberController,
+                        ),
                         const SizedBox(height: 16),
                         _buildInput(
                           'Department',
                           hint: 'e.g. Software Engineering',
+                          controller: _departmentController,
                         ),
                         const SizedBox(height: 16),
                         _buildInput(
                           'Email Address',
                           hint: 'student@futo.edu.ng',
                           icon: Icons.mail_outline,
+                          controller: _emailController,
                         ),
                         const SizedBox(height: 16),
                         _buildInput(
                           'Phone Number',
                           hint: '080 1234 5678',
                           icon: Icons.phone_outlined,
+                          controller: _phoneController,
                         ),
                         const SizedBox(height: 16),
 
@@ -243,7 +261,11 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                     ),
                                   )
                                   .toList(),
-                              onChanged: (v) {},
+                              onChanged: (v) {
+                                if (v != null) {
+                                  _genderController.text = v;
+                                }
+                              },
                               hint: const Text(
                                 'Select Gender',
                                 style: TextStyle(color: Color(0xFF45A1A1)),
@@ -254,9 +276,16 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         const SizedBox(height: 16),
 
                         // Password
-                        _buildPasswordInput('Password', _obscurePassword, () {
-                          setState(() => _obscurePassword = !_obscurePassword);
-                        }),
+                        _buildPasswordInput(
+                          'Password',
+                          _obscurePassword,
+                          () {
+                            setState(
+                              () => _obscurePassword = !_obscurePassword,
+                            );
+                          },
+                          controller: _passwordController,
+                        ),
                         const SizedBox(height: 16),
                         _buildPasswordInput(
                           'Confirm Password',
@@ -264,6 +293,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                           () {
                             setState(() => _obscureConfirm = !_obscureConfirm);
                           },
+                          controller: _confirmPasswordController,
                         ),
 
                         const SizedBox(height: 32),
@@ -317,7 +347,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
-  Widget _buildInput(String label, {String? hint, IconData? icon, TextEditingController? controller}) {
+  Widget _buildInput(
+    String label, {
+    String? hint,
+    IconData? icon,
+    TextEditingController? controller,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
@@ -338,7 +373,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     );
   }
 
-  Widget _buildPasswordInput(String label, bool obscure, VoidCallback toggle, {TextEditingController? controller}) {
+  Widget _buildPasswordInput(
+    String label,
+    bool obscure,
+    VoidCallback toggle, {
+    TextEditingController? controller,
+  }) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [

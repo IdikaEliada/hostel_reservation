@@ -38,6 +38,8 @@ class _SignInScreenState extends State<SignInScreen> {
 
     setState(() => _isLoading = true);
 
+    print(_regNumberController.text);
+
     try {
       // 1. Look up the email associated with this registration number
       final querySnapshot = await FirebaseFirestore.instance
@@ -170,6 +172,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         ),
                         const SizedBox(height: 8),
                         TextFormField(
+                          controller: _regNumberController,
                           decoration: const InputDecoration(
                             hintText: 'e.g., 2018/123456',
                           ),
@@ -193,6 +196,7 @@ class _SignInScreenState extends State<SignInScreen> {
                         const SizedBox(height: 8),
 
                         TextFormField(
+                          controller: _passwordController,
                           obscureText: _obscurePassword,
                           decoration: InputDecoration(
                             hintText: 'Enter your password',
@@ -214,17 +218,17 @@ class _SignInScreenState extends State<SignInScreen> {
                               value!.isEmpty ? 'Required' : null,
                         ),
 
-                    // Forgot Password (optional)
-                    Align(
-                      alignment: Alignment.centerRight,
-                      child: TextButton(
-                        onPressed: () {
-                          // Implement password reset if needed
-                        },
-                        child: const Text('Forgot Password?'),
-                      ),
-                    ),
-                    const SizedBox(height: 24),
+                        // Forgot Password (optional)
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              // Implement password reset if needed
+                            },
+                            child: const Text('Forgot Password?'),
+                          ),
+                        ),
+                        const SizedBox(height: 24),
 
                         // Button
                         ElevatedButton(
