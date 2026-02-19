@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hostel_reservation/widgets/app_footer.dart';
 
 class HostelListScreen extends StatelessWidget {
   const HostelListScreen({super.key});
@@ -9,6 +10,7 @@ class HostelListScreen extends StatelessWidget {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Hostels')),
+      bottomNavigationBar: const AppFooter(),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('hostels').snapshots(),
         builder: (context, snapshot) {

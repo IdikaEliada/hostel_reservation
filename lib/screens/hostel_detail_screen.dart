@@ -1,6 +1,7 @@
 import 'package:flutter/services.dart';
 import 'package:flutter/material.dart';
 import 'package:go_router/go_router.dart';
+import 'package:hostel_reservation/widgets/app_footer.dart';
 
 class HostelDetailScreen extends StatefulWidget {
   final String hostelId;
@@ -70,6 +71,7 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
     final availableRooms = widget.hostelData?['availableRooms'];
 
     return Scaffold(
+      bottomNavigationBar: const AppFooter(),
       appBar: AppBar(
         title: const Text('Hostel Info'),
         backgroundColor: Colors.white,

@@ -5,43 +5,22 @@ import 'package:hostel_reservation/widgets/app_footer.dart';
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
+  void _navigateFromDrawer(
+    BuildContext context,
+    String path, {
+    bool push = false,
+  }) {
+    Navigator.pop(context);
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      push ? context.push(path) : context.go(path);
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(title: const Text('Home')),
-
-      //ADD THIS DRAWER
-      drawer: Drawer(
-        child: ListView(
-          padding: EdgeInsets.zero,
-          children: [
-            const DrawerHeader(
-              decoration: BoxDecoration(color: Colors.green),
-              child: Text(
-                'Menu',
-                style: TextStyle(color: Colors.white, fontSize: 24),
-              ),
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.home),
-              title: const Text('Home'),
-              onTap: () {
-                context.go('/');
-              },
-            ),
-
-            ListTile(
-              leading: const Icon(Icons.feedback),
-              title: const Text('Feedback'),
-              onTap: () {
-                context.push('/feedback'); // opens your complaint page
-              },
-            ),
-          ],
-        ),
-      ),
-
+      drawer: _buildDrawer(context),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
@@ -65,5 +44,49 @@ class HomeScreen extends StatelessWidget {
       ),
       bottomNavigationBar: const AppFooter(),
     );
+  }
+
+  Widget _buildDrawer(BuildContext context) {
+    return Drawer(
+      child: ListView(
+        padding: EdgeInsets.zero,
+        children: [
+          const DrawerHeader(
+            decoration: BoxDecoration(color: Colors.green),
+            child: Text(
+              'Menu',
+              style: TextStyle(color: Colors.white, fontSize: 24),
+            ),
+          ),
+          _DrawerItem(
+            icon: Icons.home,
+            label: 'Home',
+            onTap: () => _navigateFromDrawer(context, '/'),
+          ),
+          _DrawerItem(
+            icon: Icons.feedback,
+            label: 'Feedback',
+            onTap: () => _navigateFromDrawer(context, '/feedback', push: true),
+          ),
+        ],
+      ),
+    );
+  }
+}
+
+class _DrawerItem extends StatelessWidget {
+  const _DrawerItem({
+    required this.icon,
+    required this.label,
+    required this.onTap,
+  });
+
+  final IconData icon;
+  final String label;
+  final VoidCallback onTap;
+
+  @override
+  Widget build(BuildContext context) {
+    return ListTile(leading: Icon(icon), title: Text(label), onTap: onTap);
   }
 }
