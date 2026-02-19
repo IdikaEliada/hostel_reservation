@@ -3,12 +3,13 @@ import 'package:webview_flutter/webview_flutter.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/paystack_webview_service.dart';
 
-// IMPORTANT: Add this for platform initialization
+// IMPORTANT: Add these imports for platform initialization
 import 'package:webview_flutter_android/webview_flutter_android.dart';
 import 'package:webview_flutter_wkwebview/webview_flutter_wkwebview.dart';
 
 class PaystackWebviewScreen extends StatefulWidget {
   final String email;
+  final String userId;
   final int amount;
   final String reference;
   final String roomId;
@@ -19,6 +20,7 @@ class PaystackWebviewScreen extends StatefulWidget {
   const PaystackWebviewScreen({
     super.key,
     required this.email,
+    required this.userId,
     required this.amount,
     required this.reference,
     required this.roomId,
@@ -40,11 +42,24 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
   @override
   void initState() {
     super.initState();
+    print('[Paystack] ========== PAYMENT INITIALIZED ==========');
+    print(' Email: ${widget.email}');
+    print(' User ID: ${widget.userId}');
+    print(' Amount: ₦${widget.amount}');
+    print('Reference: ${widget.reference}');
+    print(' Room ID: ${widget.roomId}');
+    print(' Room Name: ${widget.roomName}');
+    print(' Hostel ID: ${widget.hostelId}');
+    print(' Room Type ID: ${widget.roomTypeId}');
+    print('==========================================');
+    
     _initializePayment();
   }
 
   Future<void> _initializePayment() async {
-    // Initialize transaction with Paystack
+    print(' [Paystack] Initializing payment with Paystack API...');
+    
+    // Initialize transaction with Paystack using real user email
     final url = await paystackService.initializeTransaction(
       email: widget.email,
       amount: widget.amount,
@@ -54,17 +69,21 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
         'room_name': widget.roomName,
         'hostel_id': widget.hostelId,
         'room_type_id': widget.roomTypeId,
+        'user_id': widget.userId,
       },
     );
 
     if (url != null && mounted) {
+      print(' [Paystack] Payment initialized successfully!');
+      print('🔗 Authorization URL: $url');
+      
       setState(() {
         _authorizationUrl = url;
       });
       
-      // Initialize WebView AFTER we have the URL
       _initWebViewController(url);
     } else {
+      print(' [Paystack] Failed to initialize payment - URL is null');
       _showError('Failed to initialize payment');
       if (mounted) {
         Navigator.pop(context);
@@ -72,21 +91,19 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
     }
   }
 
-  // FIXED: Proper WebView initialization
   void _initWebViewController(String url) {
+    print(' [WebView] Initializing WebView controller...');
+    
     // Create platform-specific WebView implementations
     late final PlatformWebViewControllerCreationParams params;
     
-    // FIXED: Proper platform initialization
-    if (WebViewPlatform.instance == null) {
-      // Check platform and initialize accordingly
-      if (Theme.of(context).platform == TargetPlatform.android) {
-        WebViewPlatform.instance = WebKitWebViewPlatform(); // For Android - Wait, this should be AndroidWebViewPlatform
-        // CORRECTION: Use AndroidWebViewPlatform for Android
-        WebViewPlatform.instance = AndroidWebViewPlatform();
-      } else {
-        WebViewPlatform.instance = WebKitWebViewPlatform(); // For iOS
-      }
+    // Set platform instance based on platform
+    if (Theme.of(context).platform == TargetPlatform.android) {
+      print('📱 [Platform] Android detected');
+      WebViewPlatform.instance = AndroidWebViewPlatform();
+    } else {
+      print('📱 [Platform] iOS detected');
+      WebViewPlatform.instance = WebKitWebViewPlatform();
     }
 
     params = const PlatformWebViewControllerCreationParams();
@@ -99,6 +116,7 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
       ..setNavigationDelegate(
         NavigationDelegate(
           onPageStarted: (String url) {
+            print(' [WebView] Page started loading: $url');
             if (mounted) {
               setState(() {
                 _isLoading = true;
@@ -106,6 +124,7 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
             }
           },
           onPageFinished: (String url) {
+            print(' [WebView] Page finished loading: $url');
             if (mounted) {
               setState(() {
                 _isLoading = false;
@@ -113,17 +132,21 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
             }
           },
           onNavigationRequest: (NavigationRequest request) {
+            print(' [WebView] Navigation request: ${request.url}');
+            
             // Check if payment was successful
             if (request.url.contains('success') || 
                 request.url.contains('paid') ||
                 request.url.contains('callback') ||
                 request.url.contains('reference')) {
+              print(' [Paystack] Payment success detected in URL!');
               _handlePaymentSuccess();
               return NavigationDecision.prevent;
             }
             
             // Check if payment was cancelled
             if (request.url.contains('cancel')) {
+              print(' [Paystack] Payment cancelled detected in URL');
               _handlePaymentCancelled();
               return NavigationDecision.prevent;
             }
@@ -134,21 +157,29 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
       );
 
     // Load the URL
+    print(' [WebView] Loading URL: $url');
     controller.loadRequest(Uri.parse(url));
 
-    // Set the controller first
+    // Set the controller
     _controller = controller;
     
-    // Then update UI
+    // Update UI
     if (mounted) {
       setState(() {
         _isLoading = false;
       });
     }
+    print(' [WebView] WebView controller initialized');
   }
 
   Future<void> _handlePaymentSuccess() async {
-    if (_paymentComplete) return;
+    if (_paymentComplete) {
+      print(' [Paystack] Payment already completed, skipping...');
+      return;
+    }
+    
+    print(' [Paystack] ========== PAYMENT SUCCESS DETECTED ==========');
+    print('Reference: ${widget.reference}');
     
     setState(() {
       _paymentComplete = true;
@@ -156,26 +187,37 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
 
     try {
       // Verify transaction with Paystack
+      print(' [Paystack] Verifying transaction with Paystack...');
       final isSuccessful = await paystackService.verifyTransaction(widget.reference);
+      
+      print(' [Paystack] Verification result: $isSuccessful');
       
       if (!isSuccessful) {
         throw Exception('Payment verification failed');
       }
 
-      // Update room availability - NO LOGIN REQUIRED
+      // Update room availability
+      print(' [Firestore] Updating room availability...');
+      print('   Room ID: ${widget.roomId}');
+      print('   Setting isAvailable: false');
+      
       await FirebaseFirestore.instance
           .collection('rooms')
           .doc(widget.roomId)
           .update({
             'isAvailable': false,
             'bookedAt': FieldValue.serverTimestamp(),
-            'bookedBy': 'guest_${widget.reference}',
+            'bookedBy': widget.userId,
+            'bookedByEmail': widget.email,
             'paymentReference': widget.reference,
           });
+      
+      print(' [Firestore] Room updated successfully');
 
-      // Create booking record - NO LOGIN REQUIRED
-      await FirebaseFirestore.instance.collection('bookings').add({
-        'userId': 'guest_${widget.reference}',
+      // Create booking record with real user info
+      print(' [Firestore] Creating booking record...');
+      final bookingRef = await FirebaseFirestore.instance.collection('bookings').add({
+        'userId': widget.userId,
         'userEmail': widget.email,
         'hostelId': widget.hostelId,
         'roomId': widget.roomId,
@@ -185,9 +227,13 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
         'paymentReference': widget.reference,
         'paymentMethod': 'Paystack',
         'status': 'confirmed',
-        'isGuestBooking': true,
+        'isGuestBooking': false,
         'createdAt': FieldValue.serverTimestamp(),
       });
+      
+      print(' [Firestore] Booking created successfully!');
+      print('   Booking ID: ${bookingRef.id}');
+      print('==========================================');
 
       if (!mounted) return;
 
@@ -209,6 +255,7 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
               ),
               const SizedBox(height: 10),
               Text('Room: ${widget.roomName}'),
+              Text('Email: ${widget.email}'),
               Text('Ref: ${widget.reference.substring(0, 8)}...'),
               const SizedBox(height: 10),
               const Text('Your room has been booked successfully.'),
@@ -217,8 +264,9 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
           actions: [
             TextButton(
               onPressed: () {
-                Navigator.pop(context); // Close dialog
-                Navigator.pop(context, true); // Return success
+                print('👆 [UI] User clicked OK on success dialog');
+                Navigator.pop(context);
+                Navigator.pop(context, true);
               },
               child: const Text('OK'),
             ),
@@ -226,7 +274,8 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
         ),
       );
     } catch (e) {
-      print('Error saving booking: $e');
+      print(' [ERROR] Error in payment success handling: $e');
+      print('   Stack trace: ${StackTrace.current}');
       _showError('Payment successful but booking failed: ${e.toString()}');
       
       if (mounted) {
@@ -236,6 +285,8 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
   }
 
   void _handlePaymentCancelled() {
+    print(' [Paystack] Payment cancelled by user');
+    
     if (!mounted) return;
     
     Navigator.pop(context, false);
@@ -248,6 +299,8 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
   }
 
   void _showError(String message) {
+    print(' [ERROR] $message');
+    
     if (!mounted) return;
     
     ScaffoldMessenger.of(context).showSnackBar(
@@ -266,26 +319,21 @@ class _PaystackWebviewScreenState extends State<PaystackWebviewScreen> {
         elevation: 0,
         backgroundColor: Colors.green,
         actions: [
-          // FIXED: Check if _controller is initialized before using it
           if (_authorizationUrl != null)
             IconButton(
               icon: const Icon(Icons.refresh),
               onPressed: () {
-                if (_controller != null) {
-                  _controller.reload();
-                }
+                print(' [UI] User clicked refresh button');
+                _controller.reload();
               },
             ),
         ],
       ),
       body: Stack(
         children: [
-          // FIXED: Only show WebView when both conditions are met
-          if (_authorizationUrl != null && _controller != null)
+          if (_authorizationUrl != null)
             WebViewWidget(controller: _controller),
-          
-          // FIXED: Show loading until everything is ready
-          if (_isLoading || _authorizationUrl == null || _controller == null)
+          if (_isLoading || _authorizationUrl == null)
             Container(
               color: Colors.white,
               child: const Center(

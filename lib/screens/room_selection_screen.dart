@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:go_router/go_router.dart';
 import '../services/paystack_webview_service.dart';
 import './paystack_webview_screen.dart';
 
@@ -17,11 +19,32 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
   Map<String, dynamic>? _selectedRoomData; // Added
   String? _selectedRoomTypeId;
   String? _selectedRoomId;
+  Map<String, dynamic>? _selectedRoomData;
+  Map<String, dynamic>? _selectedRoomTypeData;
+  
+  // Use FirebaseAuth instance
+  final FirebaseAuth _auth = FirebaseAuth.instance;
+
+  @override
+  void initState() {
+    super.initState();
+    print('🔐 [RoomSelection] Screen initialized');
+    // Listen to auth changes
+    _auth.authStateChanges().listen((User? user) {
+      if (mounted) {
+        print('🔐 [RoomSelection] Auth state changed: ${user != null ? 'Logged in' : 'Logged out'}');
+        setState(() {});
+      }
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    // Get current user
+    final User? currentUser = _auth.currentUser;
+    
     return Scaffold(
-      backgroundColor: Colors.white, // White background
+      backgroundColor: Colors.white,
       appBar: AppBar(
         title: const Text('Select Room', style: TextStyle(color: Colors.black)),
         centerTitle: true,
@@ -29,6 +52,26 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
         elevation: 0,
         systemOverlayStyle: SystemUiOverlayStyle.dark,
         iconTheme: const IconThemeData(color: Colors.black),
+        // actions: [
+        //   if (currentUser != null)
+        //     // Padding(
+        //     //   padding: const EdgeInsets.only(right: 16),
+        //     //   child: Row(
+        //     //     children: [
+        //     //       const Icon(Icons.person, size: 20, color: Colors.green),
+        //     //       const SizedBox(width: 4),
+        //     //       Text(
+        //     //         currentUser.email?.split('@')[0] ?? 'User',
+        //     //         style: const TextStyle(
+        //     //           color: Colors.green,
+        //     //           fontSize: 14,
+        //     //           fontWeight: FontWeight.w500,
+        //     //         ),
+        //     //       ),
+        //     //     ],
+        //     //   ),
+        //     // ),
+        // ],
       ),
       body: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -65,6 +108,8 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                     if (mounted) {
                       setState(() {
                         _selectedRoomTypeId = types.first.id;
+                        _selectedRoomTypeData = types.first.data() as Map<String, dynamic>;
+                        print('🏷️ [RoomSelection] Auto-selected room type: ${_selectedRoomTypeData!['name']}');
                       });
                     }
                   });
@@ -92,10 +137,13 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                     );
                   }).toList(),
                   onChanged: (value) {
+                    final selectedDoc = types.firstWhere((doc) => doc.id == value);
                     setState(() {
                       _selectedRoomTypeId = value;
-                      _selectedRoomId =
-                          null; // Reset room selection on type change
+                      _selectedRoomTypeData = selectedDoc.data() as Map<String, dynamic>;
+                      _selectedRoomId = null;
+                      _selectedRoomData = null;
+                      print('🏷️ [RoomSelection] Changed room type to: ${_selectedRoomTypeData!['name']}');
                     });
                   },
                 );
@@ -165,7 +213,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                         padding: const EdgeInsets.all(16),
                         gridDelegate:
                             const SliverGridDelegateWithFixedCrossAxisCount(
-                              crossAxisCount: 2, // 2 columns
+                              crossAxisCount: 2,
                               childAspectRatio: 1.5,
                               crossAxisSpacing: 16,
                               mainAxisSpacing: 16,
@@ -183,6 +231,11 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                                 ? () {
                                     setState(() {
                                       _selectedRoomId = room.id;
+                                      _selectedRoomData = {
+                                        ...data,
+                                        'id': room.id,
+                                      };
+                                      print('🏠 [RoomSelection] Selected room: $roomName (ID: ${room.id})');
                                     });
                                   }
                                 : null,
@@ -290,6 +343,108 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                     },
                   ),
           ),
+          
+          // Book Now Button (appears when room is selected)
+          if (_selectedRoomId != null && _selectedRoomData != null && _selectedRoomTypeData != null)
+            Container(
+              padding: const EdgeInsets.all(16),
+              decoration: BoxDecoration(
+                color: Colors.white,
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.grey.withOpacity(0.3),
+                    blurRadius: 10,
+                    offset: const Offset(0, -5),
+                  ),
+                ],
+              ),
+              child: SafeArea(
+                child: Column(
+                  children: [
+                    // Show user info if logged in
+                    // if (currentUser != null) ...[
+                    //   Container(
+                    //     padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                    //     decoration: BoxDecoration(
+                    //       color: Colors.green.shade50,
+                    //       borderRadius: BorderRadius.circular(8),
+                    //       border: Border.all(color: Colors.green.shade200),
+                    //     ),
+                    //     child: Row(
+                    //       children: [
+                    //         const Icon(Icons.check_circle, color: Colors.green, size: 20),
+                    //         const SizedBox(width: 8),
+                    //         Expanded(
+                    //           child: Text(
+                    //             'Booking as: ${currentUser.email}',
+                    //             style: const TextStyle(
+                    //               color: Colors.green,
+                    //               fontWeight: FontWeight.w500,
+                    //             ),
+                    //             overflow: TextOverflow.ellipsis,
+                    //           ),
+                    //         ),
+                    //       ],
+                    //     ),
+                    //   ),
+                    //   const SizedBox(height: 12),
+                    // ],
+                    
+                    ElevatedButton(
+                      onPressed: currentUser != null 
+                          ? () => _initiatePayment(
+                              _selectedRoomData!,
+                              _selectedRoomId!,
+                              _selectedRoomTypeData!['price'] ?? 1000,
+                            )
+                          : () => _showLoginRequiredDialog(),
+                      style: ElevatedButton.styleFrom(
+                        backgroundColor: currentUser != null ? Colors.green : Colors.orange,
+                        foregroundColor: Colors.white,
+                        minimumSize: const Size(double.infinity, 50),
+                        shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12),
+                        ),
+                      ),
+                      child: Text(
+                        currentUser != null
+                            ? 'Book Now - ₦${_selectedRoomTypeData!['price'] ?? 1000}'
+                            : 'Login to Book',
+                        style: const TextStyle(
+                          fontSize: 18,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+        ],
+      ),
+    );
+  }
+
+  void _showLoginRequiredDialog() {
+    print('🔐 [RoomSelection] Showing login required dialog');
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Text('Login Required'),
+        content: const Text('Please login to book a room.'),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('Cancel'),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              print('🔐 [RoomSelection] Navigating to sign in screen');
+              Navigator.pop(context);
+              context.go('/signin');
+            },
+            child: const Text('Login'),
+          ),
         ],
       ),
     );
@@ -311,12 +466,14 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     // Use test email - NO LOGIN REQUIRED
     const testEmail = 'customer@example.com';
 
-    // Navigate to Paystack WebView
+    // Navigate to Paystack WebView with user email
+    print('🔄 Navigating to Paystack WebView...');
     final paymentSuccessful = await Navigator.push<bool>(
       context,
       MaterialPageRoute(
         builder: (context) => PaystackWebviewScreen(
-          email: testEmail,
+          email: user.email ?? 'student@futo.edu.ng',
+          userId: user.uid,
           amount: price,
           reference: reference,
           roomId: roomId,
@@ -326,6 +483,9 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
         ),
       ),
     );
+
+    print('✅ [RoomSelection] Payment result: $paymentSuccessful');
+    print('==========================================');
 
     // If payment successful, clear selection and show success
     if (paymentSuccessful == true && mounted) {
