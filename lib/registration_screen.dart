@@ -102,7 +102,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               backgroundColor: Colors.green,
             ),
           );
-          Navigator.of(context).pop(); // Go back to Sign In
         }
       }
     } on FirebaseAuthException catch (e) {

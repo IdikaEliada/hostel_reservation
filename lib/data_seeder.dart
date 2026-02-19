@@ -8,61 +8,18 @@ Future<void> seedHostelData() async {
   try {
     print('Seeding database...');
 
-    // 1. Create a Hostel
-    final DocumentReference
-    hostelRef = await firestore.collection('hostels').add({
-      'name': 'Happy Stay Hostel',
-      'totalRooms': 5,
-      'availableRooms': 5,
-      'imageUrls': [
-        'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80',
-        'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80',
-        'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=600&q=80',
-      ],
-      'imageUrl': // Keep for backward compatibility if needed, or remove if schema is strict.
-          'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80',
-      'createdAt': FieldValue.serverTimestamp(),
-    });
-
-    print('Hostel created: ${hostelRef.id}');
-
-    // 2. Ensure Room Types Exist (Reuse if available to avoid duplicates)
+    // 1. Ensure Room Types Exist (Reuse if available to avoid duplicates)
     final List<Map<String, dynamic>> roomTypesData = [
       {'name': 'Single Room', 'capacity': 1, 'price': 1000},
       {'name': 'Double Room', 'capacity': 2, 'price': 1500},
       {'name': 'Dormitory Bed', 'capacity': 1, 'price': 500},
     ];
+
     print('Checking/Creating room types...');
-    // ── 3. Seed current user document ──────────────────────────────────────
-    if (currentUser != null) {
-      await firestore.collection('users').doc(currentUser.uid).set({
-        'name': 'Test User',
-        'email': currentUser.email ?? 'test@email.com',
-        'phone': '08012345678',
-        'location': 'Lagos, Nigeria',
-        'avatarUrl': null,
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-      print('User document created: ${currentUser.uid}');
-    }
-
-    if (currentUser != null) {
-      final bookingRef = await firestore.collection('bookings').add({
-        'userId': currentUser.uid,
-        'hostelId': hostelRef.id,
-        //'roomName': bookedRoomName ?? 'Room 101',
-        'status': 'active',
-        'createdAt': FieldValue.serverTimestamp(),
-      });
-      print('Booking created: ${bookingRef.id}');
-    }
-
     List<String> roomTypeIds = [];
 
     for (var typeData in roomTypesData) {
       final String typeName = typeData['name'];
-
-      // Check if this type already exists
       final existingTypeQuery = await firestore
           .collection('room_types')
           .where('name', isEqualTo: typeName)
@@ -70,7 +27,7 @@ Future<void> seedHostelData() async {
           .get();
 
       if (existingTypeQuery.docs.isNotEmpty) {
-        print('Using existing room type: $typeName');
+        // print('Using existing room type: $typeName');
         roomTypeIds.add(existingTypeQuery.docs.first.id);
       } else {
         print('Creating new room type: $typeName');
@@ -81,38 +38,105 @@ Future<void> seedHostelData() async {
         roomTypeIds.add(typeRef.id);
       }
     }
-    print('Room type IDs verified: $roomTypeIds');
 
-    // 3. Create Rooms for the Hostel
-    // We will assign room types cyclically
-    final List<String> roomNames = [
-      'Room 101',
-      'Room 102',
-      'Room 103',
-      'Room 104',
-      'Room 105',
+    /*
+    // 2. Seed Hostels (A to F)
+    final List<String> hostelNames = [
+      'Hostel A',
+      'Hostel B',
+      'Hostel C',
+      'Hostel D',
+      'Hostel E',
+      'Hostel F',
     ];
 
-    print('Creating rooms...');
+    final List<String> imageUrls = [
+      'https://images.unsplash.com/photo-1555854877-bab0e564b8d5?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1520250497591-112f2f40a3f4?auto=format&fit=crop&w=600&q=80',
+      'https://images.unsplash.com/photo-1611892440504-42a792e24d32?auto=format&fit=crop&w=600&q=80',
+    ];
 
-    final WriteBatch batch = firestore.batch();
+    for (final name in hostelNames) {
+      print('Creating $name...');
 
-    for (int i = 0; i < roomNames.length; i++) {
-      final roomRef = firestore.collection('rooms').doc();
-      // Cycle through room types: 0, 1, 2, 0, 1...
-      final roomTypeId = roomTypeIds[i % roomTypeIds.length];
-
-      batch.set(roomRef, {
-        'hostelId': hostelRef.id,
-        'name': roomNames[i],
-        'roomTypeId': roomTypeId,
-        'isAvailable': true,
+      final hostelRef = await firestore.collection('hostels').add({
+        'name': name,
+        'totalRooms': 20,
+        'availableRooms': 20,
+        'imageUrls': imageUrls,
+        'imageUrl': imageUrls[0],
         'createdAt': FieldValue.serverTimestamp(),
       });
+
+      // Create Rooms for this Hostel
+      final WriteBatch batch = firestore.batch();
+      for (int i = 1; i <= 20; i++) {
+        final roomRef = firestore.collection('rooms').doc();
+        // Cycle room types
+        final roomTypeId = roomTypeIds[(i - 1) % roomTypeIds.length];
+
+        batch.set(roomRef, {
+          'hostelId': hostelRef.id,
+          'name': 'Room $i',
+          'roomTypeId': roomTypeId,
+          'isAvailable': true,
+          'createdAt': FieldValue.serverTimestamp(),
+        });
+      }
+      await batch.commit();
+    }
+    */
+
+    // 2. Add 5 rooms to ALL existing hostels
+    print('Fetching existing hostels...');
+    final hostelQuery = await firestore.collection('hostels').get();
+
+    if (hostelQuery.docs.isEmpty) {
+      print(
+        'No hostels found. Please uncomment the hostel creation logic first.',
+      );
+    } else {
+      for (final hostelDoc in hostelQuery.docs) {
+        final hostelId = hostelDoc.id;
+        final hostelName = hostelDoc.data()['name'] ?? 'Unknown Hostel';
+        print('Adding 5 rooms to $hostelName ($hostelId)...');
+
+        final WriteBatch batch = firestore.batch();
+        // Create 5 rooms
+        for (int i = 1; i <= 5; i++) {
+          final roomRef = firestore.collection('rooms').doc();
+          // Cycle room types
+          final roomTypeId = roomTypeIds[(i - 1) % roomTypeIds.length];
+          // Determine name - using a suffix to maybe distinguish
+          final roomName = 'Extra Room $i';
+
+          batch.set(roomRef, {
+            'hostelId': hostelId,
+            'name': roomName,
+            'roomTypeId': roomTypeId,
+            'isAvailable': true,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+        }
+        await batch.commit();
+        print('Added 5 rooms to $hostelName');
+      }
     }
 
-    await batch.commit();
-    print('Rooms created successfully!');
+    // 3. Seed current user document (once)
+    if (currentUser != null) {
+      await firestore.collection('users').doc(currentUser.uid).set({
+        'name': 'Test User',
+        'email': currentUser.email ?? 'test@email.com',
+        'phone': '08012345678',
+        'location': 'Lagos, Nigeria',
+        'avatarUrl': null,
+        'createdAt': FieldValue.serverTimestamp(),
+      }, SetOptions(merge: true));
+      print('User document updated: ${currentUser.uid}');
+    }
+
+    print('Seeding completed successfully!');
   } catch (e) {
     print('Error seeding data: $e');
   }
