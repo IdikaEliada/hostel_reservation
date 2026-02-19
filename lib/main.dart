@@ -8,6 +8,9 @@ import 'screens/home_screen.dart';
 import 'screens/hostel_list_screen.dart';
 import 'screens/hostel_detail_screen.dart';
 import 'screens/room_selection_screen.dart';
+import 'screens/complaint_page.dart';
+import 'screens/review_page.dart';
+import 'screens/feedback_screen.dart';
 import 'screens/admin/manage_rooms_screen.dart';
 import 'screens/admin/add_edit_room_screen.dart';
 import 'screens/user_profile.dart';
@@ -33,6 +36,7 @@ final _router = GoRouter(
       path: '/hostels',
       builder: (context, state) => const HostelListScreen(),
     ),
+
     GoRoute(
       path: '/hostel/:id',
       builder: (context, state) {
@@ -41,6 +45,7 @@ final _router = GoRouter(
         return HostelDetailScreen(hostelId: id, hostelData: data);
       },
     ),
+
     GoRoute(
       path: '/hostel/:id/rooms',
       builder: (context, state) {
@@ -48,6 +53,20 @@ final _router = GoRouter(
         return RoomSelectionScreen(hostelId: id);
       },
     ),
+
+    GoRoute(
+      path: '/complaints',
+      builder: (context, state) => ComplaintPage(),
+    ),
+
+    GoRoute(
+      path: '/reviews',
+      builder: (context, state) => ReviewPage(),
+    ),
+
+    GoRoute(
+      path: '/feedback',
+      builder: (context, state) => FeedbackScreen(),
     GoRoute(
       path: '/admin/rooms',
       builder: (context, state) => const ManageRoomsScreen(),

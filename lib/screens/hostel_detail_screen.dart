@@ -85,7 +85,7 @@ class _HostelDetailScreenState extends State<HostelDetailScreen> {
             if (context.canPop()) {
               context.pop();
             } else {
-              context.go('/hostels');
+              context.push('/hostels');
             }
           },
         ),
