@@ -132,7 +132,8 @@ class _UserProfileScreenState extends State<UserProfileScreen>
   SliverAppBar _buildAppBar(Map<String, dynamic>? userData) {
     final displayName =
         userData?['firstName'] ?? _user?.displayName ?? 'User Name';
-    final email = userData?['email'] ?? _user?.email ?? '';
+    final email =
+        userData?['email'] ?? _user?.email ?? 'studentemail@futo.edu.ng';
     final photoUrl = userData?['avatarUrl'] ?? _user?.photoURL;
 
     return SliverAppBar(
