@@ -1,5 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter_riverpod/flutter_riverpod.dart';
+import 'package:hostel_reservation/data_seeder.dart';
+import 'firebase_options.dart';
+import 'providers/router_provider.dart';
 import 'package:go_router/go_router.dart';
 //import 'package:hostel_reservation/registration_screen.dart';
 import 'package:hostel_reservation/sign_in_screen.dart';
@@ -25,7 +29,7 @@ void main() async {
   // Run the seeding function immediately when the app starts
   // await seedHostelData();
 
-  runApp(const MyApp());
+  runApp(const ProviderScope(child: MyApp()));
 }
 
 final _router = GoRouter(
@@ -89,7 +93,9 @@ class MyApp extends StatelessWidget {
   const MyApp({super.key});
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context, WidgetRef ref) {
+    final router = ref.watch(routerProvider);
+
     return MaterialApp.router(
       title: 'Hostel Reservation',
       theme: ThemeData(
@@ -102,7 +108,7 @@ class MyApp extends StatelessWidget {
         useMaterial3: true,
       ),
       debugShowCheckedModeBanner: false,
-      routerConfig: _router,
+      routerConfig: router,
     );
   }
 }
