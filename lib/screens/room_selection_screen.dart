@@ -17,7 +17,7 @@ class RoomSelectionScreen extends StatefulWidget {
 }
 
 class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
-  //Map<String, dynamic>? _selectedRoomData; // Added
+  Map<String, dynamic>? _selectedRoomData; // Added
   String? _selectedRoomTypeId;
   String? _selectedRoomId;
   Map<String, dynamic>? _selectedRoomTypeData;
@@ -524,8 +524,8 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
       context,
       MaterialPageRoute(
         builder: (context) => PaystackWebviewScreen(
-          email: currentUser.email ?? 'student@futo.edu.ng',
-          userId: currentUser.uid,
+          email: user.email ?? 'student@futo.edu.ng',
+          userId: user.uid,
           amount: price,
           reference: reference,
           roomId: roomId,
@@ -543,7 +543,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     if (paymentSuccessful == true && mounted) {
       setState(() {
         _selectedRoomId = null;
-        // _selectedRoomData = null;
+        _selectedRoomData = null;
       });
 
       ScaffoldMessenger.of(context).showSnackBar(

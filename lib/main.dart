@@ -89,7 +89,7 @@ final _router = GoRouter(
   ],
 );
 
-class MyApp extends StatelessWidget {
+class MyApp extends ConsumerWidget {
   const MyApp({super.key});
 
   @override
