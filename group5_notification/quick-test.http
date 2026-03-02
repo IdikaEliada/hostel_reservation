@@ -1,0 +1,91 @@
+### Quick API Tests for Notification Backend
+### You can use these with VS Code REST Client extension or similar tools
+
+@baseUrl = http://localhost:3000
+@userId = test-user-001
+
+### Health Check
+GET {{baseUrl}}/health
+
+### Send User Signup Notification (Email + SMS)
+POST {{baseUrl}}/api/notifications/send
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "event": "user_signup",
+  "payload": {
+    "userName": "Test User",
+    "loginUrl": "https://yourapp.com/login"
+  }
+}
+
+### Send Password Reset Notification
+POST {{baseUrl}}/api/notifications/send
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "event": "password_reset",
+  "payload": {
+    "userName": "Test User",
+    "resetLink": "https://yourapp.com/reset?token=xyz789",
+    "expiryTime": "30 minutes"
+  }
+}
+
+### Send Booking Confirmation Notification
+POST {{baseUrl}}/api/notifications/send
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "event": "booking_confirmation",
+  "payload": {
+    "userName": "Test User",
+    "hostelName": "Elite Hostel",
+    "roomNumber": "A-101",
+    "bookingDate": "2026-02-17",
+    "checkInDate": "2026-03-01",
+    "amount": "₦50,000"
+  }
+}
+
+### Send Payment Success Notification
+POST {{baseUrl}}/api/notifications/send
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "event": "payment_success",
+  "payload": {
+    "userName": "Test User",
+    "amount": "₦50,000",
+    "transactionId": "TXN123456789",
+    "paymentDate": "2026-02-17"
+  }
+}
+
+### Get User Notifications
+GET {{baseUrl}}/api/notifications/{{userId}}
+
+### Get User Notifications with Pagination
+GET {{baseUrl}}/api/notifications/{{userId}}?limit=10&offset=0
+
+### Test with Invalid Event (Should Fail)
+POST {{baseUrl}}/api/notifications/send
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}",
+  "event": "invalid_event",
+  "payload": {}
+}
+
+### Test with Missing Fields (Should Fail)
+POST {{baseUrl}}/api/notifications/send
+Content-Type: application/json
+
+{
+  "userId": "{{userId}}"
+}

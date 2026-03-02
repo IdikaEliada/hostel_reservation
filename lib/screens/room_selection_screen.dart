@@ -99,8 +99,9 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                   .snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.hasError) return const SizedBox();
-                if (!snapshot.hasData)
+                if (!snapshot.hasData) {
                   return const Center(child: LinearProgressIndicator());
+                }
 
                 final types = snapshot.data!.docs;
                 if (types.isEmpty) return const SizedBox();
@@ -122,7 +123,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                 }
 
                 return DropdownButtonFormField<String>(
-                  value: _selectedRoomTypeId,
+                  initialValue: _selectedRoomTypeId,
                   decoration: InputDecoration(
                     labelText: 'Select Room Type',
                     border: OutlineInputBorder(
@@ -237,154 +238,210 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                           final isAvailable = data['isAvailable'] ?? false;
                           final roomName = data['name'] ?? 'Room ${index + 1}';
                           final isSelected = _selectedRoomId == room.id;
+                          final capacity =
+                              (_selectedRoomTypeData?['capacity'] as num?)
+                                  ?.toInt() ??
+                              1;
 
-                          return InkWell(
-                            onTap: isAvailable
-                                ? () {
-                                    setState(() {
-                                      _selectedRoomId = room.id;
-                                      _selectedRoomData = {
-                                        ...data,
-                                        'id': room.id,
-                                      };
-                                      print(
-                                        '🏠 [RoomSelection] Selected room: $roomName (ID: ${room.id})',
-                                      );
-                                    });
-                                  }
-                                : null,
-                            borderRadius: BorderRadius.circular(16),
-                            child: Container(
-                              decoration: BoxDecoration(
-                                color: isSelected
-                                    ? Colors.green
-                                    : (isAvailable
-                                          ? Colors.white
-                                          : Colors.grey[100]),
-                                borderRadius: BorderRadius.circular(16),
-                                border: Border.all(
-                                  color: isSelected
-                                      ? Colors.green
-                                      : (isAvailable
-                                            ? Colors.green.shade200
-                                            : Colors.grey.shade300),
-                                  width: isSelected ? 2.5 : 2,
-                                ),
-                                boxShadow: isAvailable && !isSelected
-                                    ? [
-                                        BoxShadow(
-                                          color: Colors.green.withOpacity(0.1),
-                                          blurRadius: 8,
-                                          offset: const Offset(0, 4),
-                                        ),
-                                      ]
+                          return StreamBuilder<QuerySnapshot>(
+                            stream: FirebaseFirestore.instance
+                                .collection('bookings')
+                                .where('roomId', isEqualTo: room.id)
+                                .where('status', isEqualTo: 'confirmed')
+                                .snapshots(),
+                            builder: (context, bookingSnapshot) {
+                              final bookedSpaces = bookingSnapshot.hasData
+                                  ? bookingSnapshot.data!.docs.length
+                                  : 0;
+                              final remainingSpaces = capacity - bookedSpaces;
+                              final isActuallyAvailable =
+                                  isAvailable && remainingSpaces > 0;
+
+                              return InkWell(
+                                onTap: isActuallyAvailable
+                                    ? () {
+                                        setState(() {
+                                          _selectedRoomId = room.id;
+                                          _selectedRoomData = {
+                                            ...data,
+                                            'id': room.id,
+                                            'customPrice': data['customPrice'],
+                                          };
+                                          print(
+                                            '🏠 [RoomSelection] Selected room: $roomName (ID: ${room.id})',
+                                          );
+                                        });
+                                      }
                                     : null,
-                              ),
-                              child: Stack(
-                                children: [
-                                  Center(
-                                    child: Column(
-                                      mainAxisAlignment:
-                                          MainAxisAlignment.center,
-                                      children: [
-                                        Icon(
-                                          isAvailable
-                                              ? Icons.meeting_room
-                                              : Icons.no_meeting_room,
-                                          color: isSelected
+                                borderRadius: BorderRadius.circular(16),
+                                child: Container(
+                                  decoration: BoxDecoration(
+                                    color: isSelected
+                                        ? Colors.green
+                                        : (isActuallyAvailable
                                               ? Colors.white
-                                              : (isAvailable
-                                                    ? Colors.green
-                                                    : Colors.grey),
-                                          size: 32,
-                                        ),
-                                        const SizedBox(height: 8),
-                                        Text(
-                                          roomName,
-                                          style: TextStyle(
-                                            fontSize: 18,
-                                            fontWeight: FontWeight.bold,
-                                            color: isSelected
-                                                ? Colors.white
-                                                : (isAvailable
-                                                      ? Colors.black87
-                                                      : Colors.grey),
-                                          ),
-                                        ),
-                                        const SizedBox(height: 4),
-                                        Text(
-                                          isSelected
-                                              ? 'Selected'
-                                              : (isAvailable
-                                                    ? 'Available'
-                                                    : 'Occupied'),
-                                          style: TextStyle(
-                                            fontSize: 12,
-                                            color: isSelected
-                                                ? Colors.white
-                                                : (isAvailable
-                                                      ? Colors.green
-                                                      : Colors.grey),
-                                            fontWeight: FontWeight.w500,
-                                          ),
-                                        ),
-                                        if (isAvailable) ...[
-                                          const SizedBox(height: 8),
-                                          SizedBox(
-                                            height: 32,
-                                            child: ElevatedButton(
-                                              onPressed: () {
-                                                _initiatePayment(data, room.id);
-                                              },
-                                              style: ElevatedButton.styleFrom(
-                                                backgroundColor: isSelected
+                                              : Colors.grey[100]),
+                                    borderRadius: BorderRadius.circular(16),
+                                    border: Border.all(
+                                      color: isSelected
+                                          ? Colors.green
+                                          : (isActuallyAvailable
+                                                ? Colors.green.shade200
+                                                : Colors.grey.shade300),
+                                      width: isSelected ? 2.5 : 2,
+                                    ),
+                                    boxShadow:
+                                        isActuallyAvailable && !isSelected
+                                        ? [
+                                            BoxShadow(
+                                              color: Colors.green.withOpacity(
+                                                0.1,
+                                              ),
+                                              blurRadius: 8,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ]
+                                        : null,
+                                  ),
+                                  child: Stack(
+                                    children: [
+                                      Center(
+                                        child: Column(
+                                          mainAxisAlignment:
+                                              MainAxisAlignment.center,
+                                          children: [
+                                            Icon(
+                                              isActuallyAvailable
+                                                  ? Icons.meeting_room
+                                                  : Icons.no_meeting_room,
+                                              color: isSelected
+                                                  ? Colors.white
+                                                  : (isActuallyAvailable
+                                                        ? Colors.green
+                                                        : Colors.grey),
+                                              size: 32,
+                                            ),
+                                            const SizedBox(height: 8),
+                                            Text(
+                                              roomName,
+                                              style: TextStyle(
+                                                fontSize: 18,
+                                                fontWeight: FontWeight.bold,
+                                                color: isSelected
                                                     ? Colors.white
-                                                    : Colors.green,
-                                                foregroundColor: isSelected
-                                                    ? Colors.green
-                                                    : Colors.white,
-                                                padding:
-                                                    const EdgeInsets.symmetric(
-                                                      horizontal: 12,
+                                                    : (isActuallyAvailable
+                                                          ? Colors.black87
+                                                          : Colors.grey),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              '$bookedSpaces/$capacity Spaces',
+                                              style: TextStyle(
+                                                fontSize: 14,
+                                                fontWeight: FontWeight.bold,
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : (isActuallyAvailable
+                                                          ? Colors.black87
+                                                          : Colors.grey),
+                                              ),
+                                            ),
+                                            const SizedBox(height: 4),
+                                            Text(
+                                              isSelected
+                                                  ? 'Selected'
+                                                  : (isActuallyAvailable
+                                                        ? 'Available'
+                                                        : 'Full'),
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: isSelected
+                                                    ? Colors.white
+                                                    : (isActuallyAvailable
+                                                          ? Colors.green
+                                                          : Colors.grey),
+                                                fontWeight: FontWeight.w500,
+                                              ),
+                                            ),
+                                            if (isActuallyAvailable) ...[
+                                              const SizedBox(height: 8),
+                                              SizedBox(
+                                                height: 32,
+                                                child: ElevatedButton(
+                                                  onPressed: () {
+                                                    _initiatePayment(
+                                                      data,
+                                                      room.id,
+                                                    );
+                                                  },
+                                                  style: ElevatedButton.styleFrom(
+                                                    backgroundColor: isSelected
+                                                        ? Colors.white
+                                                        : Colors.green,
+                                                    foregroundColor: isSelected
+                                                        ? Colors.green
+                                                        : Colors.white,
+                                                    padding:
+                                                        const EdgeInsets.symmetric(
+                                                          horizontal: 12,
+                                                        ),
+                                                    shape: RoundedRectangleBorder(
+                                                      borderRadius:
+                                                          BorderRadius.circular(
+                                                            8,
+                                                          ),
                                                     ),
-                                                shape: RoundedRectangleBorder(
-                                                  borderRadius:
-                                                      BorderRadius.circular(8),
+                                                  ),
+                                                  child: Text(
+                                                    'Book (₦${data['customPrice'] ?? _selectedRoomTypeData?['price'] ?? 1000})',
+                                                    style: const TextStyle(
+                                                      fontSize: 10,
+                                                      fontWeight:
+                                                          FontWeight.bold,
+                                                    ),
+                                                  ),
                                                 ),
                                               ),
-                                              child: const Text(
-                                                'Book Room',
-                                                style: TextStyle(
-                                                  fontSize: 12,
-                                                  fontWeight: FontWeight.bold,
+                                            ],
+                                            const SizedBox(height: 8),
+                                            Row(
+                                              mainAxisAlignment:
+                                                  MainAxisAlignment.center,
+                                              children: List.generate(
+                                                5,
+                                                (index) => const Icon(
+                                                  Icons.star,
+                                                  color: Colors.amber,
+                                                  size: 14,
                                                 ),
                                               ),
                                             ),
-                                          ),
-                                        ],
-                                      ],
-                                    ),
-                                  ),
-                                  if (isSelected)
-                                    Positioned(
-                                      top: 8,
-                                      right: 8,
-                                      child: Container(
-                                        padding: const EdgeInsets.all(4),
-                                        decoration: const BoxDecoration(
-                                          color: Colors.white,
-                                          shape: BoxShape.circle,
-                                        ),
-                                        child: const Icon(
-                                          Icons.check,
-                                          size: 16,
-                                          color: Colors.green,
+                                          ],
                                         ),
                                       ),
-                                    ),
-                                ],
-                              ),
-                            ),
+                                      if (isSelected)
+                                        Positioned(
+                                          top: 8,
+                                          right: 8,
+                                          child: Container(
+                                            padding: const EdgeInsets.all(4),
+                                            decoration: const BoxDecoration(
+                                              color: Colors.white,
+                                              shape: BoxShape.circle,
+                                            ),
+                                            child: const Icon(
+                                              Icons.check,
+                                              size: 16,
+                                              color: Colors.green,
+                                            ),
+                                          ),
+                                        ),
+                                    ],
+                                  ),
+                                ),
+                              );
+                            },
                           );
                         },
                       );
@@ -458,7 +515,7 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
                       ),
                       child: Text(
                         currentUser != null
-                            ? 'Book Now - ₦${_selectedRoomTypeData!['price'] ?? 1000}'
+                            ? 'Book Now - ₦${_selectedRoomData!['customPrice'] ?? _selectedRoomTypeData?['price'] ?? 1000}'
                             : 'Login to Book',
                         style: const TextStyle(
                           fontSize: 18,
@@ -507,10 +564,15 @@ class _RoomSelectionScreenState extends State<RoomSelectionScreen> {
     final user = _auth.currentUser;
     if (user == null) return; // guard
     print(roomData);
-    // Get room price
-    int price = roomData['price'] is int
-        ? roomData['price']
-        : int.tryParse(roomData['price'].toString()) ?? 1000;
+    // Get room price (checking for custom override first)
+    final dynamic rawPrice =
+        roomData['customPrice'] ?? roomData['price'] ?? 1000;
+
+    int price = rawPrice is int
+        ? rawPrice
+        : (rawPrice is double
+              ? rawPrice.toInt()
+              : int.tryParse(rawPrice.toString()) ?? 1000);
 
     // Generate unique reference
     final reference = paystackService.generateReference();

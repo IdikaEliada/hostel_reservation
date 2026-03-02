@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class ComplaintPage extends StatefulWidget {
+  const ComplaintPage({super.key});
+
   @override
   _ComplaintPageState createState() => _ComplaintPageState();
 }
@@ -32,7 +34,7 @@ class _ComplaintPageState extends State<ComplaintPage> {
             children: [
               Text('Select Category:', style: TextStyle(fontSize: 16)),
               DropdownButtonFormField<String>(
-                value: _selectedCategory,
+                initialValue: _selectedCategory,
                 items: _categories
                     .map((cat) => DropdownMenuItem(
                           value: cat,

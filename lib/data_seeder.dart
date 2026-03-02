@@ -87,28 +87,58 @@ Future<void> seedHostelData() async {
     }
     */
 
-    // 2. Add 5 rooms to ALL existing hostels
+    // 2. Clear existing rooms and add new ones sequentially across hostels
+    print('Clearing existing rooms...');
+    final existingRoomsQuery = await firestore.collection('rooms').get();
+
+    WriteBatch deleteBatch = firestore.batch();
+    int deleteOpsCount = 0;
+
+    for (var doc in existingRoomsQuery.docs) {
+      deleteBatch.delete(doc.reference);
+      deleteOpsCount++;
+      if (deleteOpsCount >= 400) {
+        // Limit to 400 to be safe with Firebase limits
+        await deleteBatch.commit();
+        deleteBatch = firestore.batch();
+        deleteOpsCount = 0;
+      }
+    }
+    if (deleteOpsCount > 0) {
+      await deleteBatch.commit();
+    }
+    print('Cleared ${existingRoomsQuery.docs.length} existing rooms.');
+
     print('Fetching existing hostels...');
     final hostelQuery = await firestore.collection('hostels').get();
 
     if (hostelQuery.docs.isEmpty) {
-      print(
-        'No hostels found. Please uncomment the hostel creation logic first.',
-      );
+      print('No hostels found. Please create hostels first.');
     } else {
-      for (final hostelDoc in hostelQuery.docs) {
+      // Sort hostels by name for consistent room distribution (Hostel A -> Hostel B -> ...)
+      final sortedHostels = hostelQuery.docs.toList()
+        ..sort((a, b) {
+          final nameA = a.data()['name']?.toString() ?? '';
+          final nameB = b.data()['name']?.toString() ?? '';
+          return nameA.compareTo(nameB);
+        });
+
+      int globalRoomCounter = 1;
+
+      for (final hostelDoc in sortedHostels) {
         final hostelId = hostelDoc.id;
         final hostelName = hostelDoc.data()['name'] ?? 'Unknown Hostel';
-        print('Adding 5 rooms to $hostelName ($hostelId)...');
+        print('Creating 5 rooms for $hostelName...');
 
         final WriteBatch batch = firestore.batch();
         // Create 5 rooms
-        for (int i = 1; i <= 5; i++) {
+        for (int i = 0; i < 5; i++) {
           final roomRef = firestore.collection('rooms').doc();
-          // Cycle room types
-          final roomTypeId = roomTypeIds[(i - 1) % roomTypeIds.length];
-          // Determine name - using a suffix to maybe distinguish
-          final roomName = 'Extra Room $i';
+          // Cycle room types safely
+          final roomTypeId =
+              roomTypeIds[(globalRoomCounter - 1) % roomTypeIds.length];
+          // Determine sequential name
+          final roomName = 'Room $globalRoomCounter';
 
           batch.set(roomRef, {
             'hostelId': hostelId,
@@ -117,6 +147,8 @@ Future<void> seedHostelData() async {
             'isAvailable': true,
             'createdAt': FieldValue.serverTimestamp(),
           });
+
+          globalRoomCounter++;
         }
         await batch.commit();
         print('Added 5 rooms to $hostelName');
@@ -124,17 +156,17 @@ Future<void> seedHostelData() async {
     }
 
     // 3. Seed current user document (once)
-    if (currentUser != null) {
-      await firestore.collection('users').doc(currentUser.uid).set({
-        'name': 'Test User',
-        'email': currentUser.email ?? 'test@email.com',
-        'phone': '08012345678',
-        'location': 'Lagos, Nigeria',
-        'avatarUrl': null,
-        'createdAt': FieldValue.serverTimestamp(),
-      }, SetOptions(merge: true));
-      print('User document updated: ${currentUser.uid}');
-    }
+    // if (currentUser != null) {
+    //   await firestore.collection('users').doc(currentUser.uid).set({
+    //     'name': 'Test User',
+    //     'email': currentUser.email ?? 'test@email.com',
+    //     'phone': '08012345678',
+    //     'location': 'Lagos, Nigeria',
+    //     'avatarUrl': null,
+    //     'createdAt': FieldValue.serverTimestamp(),
+    //   }, SetOptions(merge: true));
+    //   print('User document updated: ${currentUser.uid}');
+    // }
 
     print('Seeding completed successfully!');
   } catch (e) {

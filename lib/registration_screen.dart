@@ -8,6 +8,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'app_theme.dart';
+import 'notifications/fcm_token_store.dart';
 
 /// Detailed registration form for new students.
 // [LABEL: REGISTRATION SCREEN] - For new student signup.
@@ -67,13 +68,12 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
     setState(() => _isLoading = true);
 
     try {
-      print('pass' + _passwordController.text);
       // Create user with Firebase Auth
-      final UserCredential userCredential = await FirebaseAuth.instance
-          .createUserWithEmailAndPassword(
-            email: _emailController.text.trim(),
-            password: _passwordController.text,
-          );
+      final UserCredential userCredential =
+          await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text,
+      );
 
       final User? user = userCredential.user;
 
@@ -86,9 +86,13 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           'department': _departmentController.text.trim(),
           'email': _emailController.text.trim(),
           'phone': _phoneController.text.trim(),
-          'gender': _genderController.text,
+          'gender': _genderController.text.trim(),
           'createdAt': FieldValue.serverTimestamp(),
         });
+
+        // ✅ Save FCM token using correct uid
+        await saveFcmTokenForUser(user.uid);
+        print("✅ Signed up uid: ${user.uid}");
 
         // Send email verification
         await user.sendEmailVerification();
@@ -138,9 +142,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
         );
       }
     } finally {
-      if (mounted) {
-        setState(() => _isLoading = false);
-      }
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
@@ -152,7 +154,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           child: SingleChildScrollView(
             padding: const EdgeInsets.all(16.0),
             child: ConstrainedBox(
-              constraints: const BoxConstraints(maxWidth: 480), // max-w-[480px]
+              constraints: const BoxConstraints(maxWidth: 480),
               child: Column(
                 children: [
                   // Header
@@ -173,16 +175,14 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                   Text(
                     'Student Registration',
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 22,
-                    ),
+                          fontWeight: FontWeight.bold,
+                          fontSize: 22,
+                        ),
                   ),
                   const SizedBox(height: 4),
                   const Text(
                     'Book your hostel accommodation securely.',
-                    style: TextStyle(
-                      color: Color(0xFF45A1A1), // text-[#45a1a1]
-                    ),
+                    style: TextStyle(color: Color(0xFF45A1A1)),
                   ),
                   const SizedBox(height: 32),
 
@@ -190,7 +190,6 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                     key: _formKey,
                     child: Column(
                       children: [
-                        // Name Row
                         Row(
                           children: [
                             Expanded(
@@ -236,7 +235,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                         ),
                         const SizedBox(height: 16),
 
-                        // Gender Dropdown
+                        // Gender
                         Column(
                           crossAxisAlignment: CrossAxisAlignment.start,
                           children: [
@@ -261,9 +260,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                                   )
                                   .toList(),
                               onChanged: (v) {
-                                if (v != null) {
-                                  _genderController.text = v;
-                                }
+                                if (v != null) _genderController.text = v;
                               },
                               hint: const Text(
                                 'Select Gender',
@@ -272,26 +269,22 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                             ),
                           ],
                         ),
+
                         const SizedBox(height: 16),
 
-                        // Password
                         _buildPasswordInput(
                           'Password',
                           _obscurePassword,
-                          () {
-                            setState(
-                              () => _obscurePassword = !_obscurePassword,
-                            );
-                          },
+                          () => setState(
+                              () => _obscurePassword = !_obscurePassword),
                           controller: _passwordController,
                         ),
                         const SizedBox(height: 16),
                         _buildPasswordInput(
                           'Confirm Password',
                           _obscureConfirm,
-                          () {
-                            setState(() => _obscureConfirm = !_obscureConfirm);
-                          },
+                          () =>
+                              setState(() => _obscureConfirm = !_obscureConfirm),
                           controller: _confirmPasswordController,
                         ),
 
@@ -366,7 +359,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
                 ? Icon(icon, color: const Color(0xFF45A1A1))
                 : null,
           ),
-          validator: (v) => v!.isEmpty ? 'Required' : null,
+          validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
         ),
       ],
     );
@@ -387,9 +380,8 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
           controller: controller,
           obscureText: obscure,
           decoration: InputDecoration(
-            hintText: label.contains('Confirm')
-                ? 'Confirm password'
-                : 'Create password',
+            hintText:
+                label.contains('Confirm') ? 'Confirm password' : 'Create password',
             hintStyle: const TextStyle(color: Color(0xFF45A1A1)),
             suffixIcon: IconButton(
               icon: Icon(
@@ -399,7 +391,7 @@ class _RegistrationScreenState extends State<RegistrationScreen> {
               onPressed: toggle,
             ),
           ),
-          validator: (v) => v!.isEmpty ? 'Required' : null,
+          validator: (v) => (v == null || v.isEmpty) ? 'Required' : null,
         ),
       ],
     );

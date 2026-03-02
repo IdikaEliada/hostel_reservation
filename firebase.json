@@ -1,1 +1,35 @@
-{"flutter":{"platforms":{"android":{"default":{"projectId":"hostelreservation-1defd","appId":"1:1053110957892:android:3f62ad94a8ad058499c911","fileOutput":"android/app/google-services.json"}},"ios":{"default":{"projectId":"hostelreservation-1defd","appId":"1:1053110957892:ios:ba555077fb32c3bd99c911","uploadDebugSymbols":false,"fileOutput":"ios/Runner/GoogleService-Info.plist"}},"dart":{"lib/firebase_options.dart":{"projectId":"hostelreservation-1defd","configurations":{"android":"1:1053110957892:android:3f62ad94a8ad058499c911","ios":"1:1053110957892:ios:ba555077fb32c3bd99c911","web":"1:1053110957892:web:0a0bd68bb196f1fb99c911"}}}}},"firestore":{"rules":"firestore.rules","indexes":"firestore.indexes.json"}}
+{
+    "flutter": {
+        "platforms": {
+            "android": {
+                "default": {
+                    "projectId": "hostelreservation-1defd",
+                    "appId": "1:1053110957892:android:3f62ad94a8ad058499c911",
+                    "fileOutput": "android/app/google-services.json"
+                }
+            },
+            "ios": {
+                "default": {
+                    "projectId": "hostelreservation-1defd",
+                    "appId": "1:1053110957892:ios:ba555077fb32c3bd99c911",
+                    "uploadDebugSymbols": false,
+                    "fileOutput": "ios/Runner/GoogleService-Info.plist"
+                }
+            },
+            "dart": {
+                "lib/firebase_options.dart": {
+                    "projectId": "hostelreservation-1defd",
+                    "configurations": {
+                        "android": "1:1053110957892:android:3f62ad94a8ad058499c911",
+                        "ios": "1:1053110957892:ios:ba555077fb32c3bd99c911",
+                        "web": "1:1053110957892:web:0a0bd68bb196f1fb99c911"
+                    }
+                }
+            }
+        }
+    },
+    "firestore": {
+        "rules": "firestore.rules",
+        "indexes": "firestore.indexes.json"
+    }
+}

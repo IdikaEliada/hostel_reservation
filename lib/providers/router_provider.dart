@@ -10,10 +10,13 @@ import 'package:hostel_reservation/sign_in_screen.dart';
 import 'package:hostel_reservation/splash_screen.dart';
 import 'package:hostel_reservation/screens/admin/manage_rooms_screen.dart';
 import 'package:hostel_reservation/screens/admin/add_edit_room_screen.dart';
+import 'package:hostel_reservation/screens/admin/manage_hostels_screen.dart';
+import 'package:hostel_reservation/screens/admin/add_edit_hostel_screen.dart';
 import 'package:hostel_reservation/registration_screen.dart';
 
 final routerProvider = Provider<GoRouter>((ref) {
   final authState = ref.watch(authStateProvider);
+  final isAdminAuth = ref.watch(adminAuthProvider);
 
   return GoRouter(
     initialLocation: '/',
@@ -21,12 +24,21 @@ final routerProvider = Provider<GoRouter>((ref) {
       final isLoading = authState.isLoading;
       final hasError = authState.hasError;
       final isAuth = authState.asData?.value != null;
+      final path = state.uri.toString();
 
-      final isSplash = state.uri.toString() == '/';
-      final isLogin = state.uri.toString() == '/signin';
-      final isRegister = state.uri.toString() == '/register';
+      final isSplash = path == '/';
+      final isLogin = path == '/signin';
+      final isRegister = path == '/register';
+      final isAdmin = path.startsWith('/admin');
 
       if (isLoading || hasError) return null;
+
+      // Admin is authenticated via unique key — let them through /admin/* freely
+      if (isAdminAuth && isAdmin) return null;
+      // Admin trying to access other pages → push to admin dashboard
+      if (isAdminAuth && (isSplash || isLogin || isRegister)) {
+        return '/admin/hostels';
+      }
 
       if (isSplash) {
         return isAuth ? '/hostels' : '/signin';
@@ -36,6 +48,7 @@ final routerProvider = Provider<GoRouter>((ref) {
         return isAuth ? '/hostels' : null;
       }
 
+      // Block unauthenticated users from admin and other protected routes
       if (!isAuth) {
         return '/signin';
       }
@@ -77,12 +90,34 @@ final routerProvider = Provider<GoRouter>((ref) {
         builder: (context, state) => const UserProfileScreen(),
       ),
       GoRoute(
+        path: '/admin/hostels',
+        builder: (context, state) => const ManageHostelsScreen(),
+      ),
+      GoRoute(
+        path: '/admin/hostels/add',
+        builder: (context, state) => const AddEditHostelScreen(),
+      ),
+      GoRoute(
+        path: '/admin/hostels/edit/:id',
+        builder: (context, state) {
+          final id = state.pathParameters['id']!;
+          final data = state.extra as Map<String, dynamic>?;
+          return AddEditHostelScreen(hostelId: id, initialData: data);
+        },
+      ),
+      GoRoute(
         path: '/admin/rooms',
-        builder: (context, state) => const ManageRoomsScreen(),
+        builder: (context, state) {
+          final hostelId = state.uri.queryParameters['hostelId'];
+          return ManageRoomsScreen(hostelId: hostelId);
+        },
       ),
       GoRoute(
         path: '/admin/rooms/add',
-        builder: (context, state) => const AddEditRoomScreen(),
+        builder: (context, state) {
+          final data = state.extra as Map<String, dynamic>?;
+          return AddEditRoomScreen(initialData: data);
+        },
       ),
       GoRoute(
         path: '/admin/rooms/edit/:id',

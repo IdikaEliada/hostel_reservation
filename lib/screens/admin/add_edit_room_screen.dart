@@ -16,6 +16,7 @@ class AddEditRoomScreen extends StatefulWidget {
 class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
+  final _customPriceController = TextEditingController();
   String? _selectedHostelId;
   String? _selectedRoomTypeId;
   bool _isAvailable = true;
@@ -37,6 +38,11 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
       _selectedRoomTypeId = widget.initialData!['roomTypeId'];
       _isAvailable = widget.initialData!['isAvailable'] ?? true;
       _occupants = List<String>.from(widget.initialData!['occupants'] ?? []);
+
+      if (widget.initialData!['customPrice'] != null) {
+        _customPriceController.text = widget.initialData!['customPrice']
+            .toString();
+      }
     } else if (widget.roomId != null) {
       // Fetch if initialData not passed (though we try to pass it)
       _fetchRoomData();
@@ -85,6 +91,10 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
           _selectedRoomTypeId = data['roomTypeId'];
           _isAvailable = data['isAvailable'] ?? true;
           _occupants = List<String>.from(data['occupants'] ?? []);
+
+          if (data['customPrice'] != null) {
+            _customPriceController.text = data['customPrice'].toString();
+          }
         });
       }
     } catch (e) {
@@ -152,12 +162,17 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
     setState(() => _isLoading = true);
 
     try {
+      final customPriceParsed = double.tryParse(
+        _customPriceController.text.trim(),
+      );
+
       final roomData = {
         'hostelId': _selectedHostelId,
         'name': _nameController.text.trim(),
         'roomTypeId': _selectedRoomTypeId,
         'isAvailable': _isAvailable,
         'occupants': _occupants,
+        'customPrice': customPriceParsed,
         'updatedAt': FieldValue.serverTimestamp(),
       };
 
@@ -226,12 +241,16 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: _selectedHostelId,
+                        isExpanded: true,
+                        initialValue: _selectedHostelId,
                         decoration: _inputDecoration('Hostel', Icons.apartment),
                         items: _hostels.map((hostel) {
                           return DropdownMenuItem<String>(
                             value: hostel['id'],
-                            child: Text(hostel['name'] ?? 'Unknown'),
+                            child: Text(
+                              hostel['name'] ?? 'Unknown',
+                              overflow: TextOverflow.ellipsis,
+                            ),
                           );
                         }).toList(),
                         onChanged: (value) =>
@@ -241,7 +260,8 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                       ),
                       const SizedBox(height: 16),
                       DropdownButtonFormField<String>(
-                        value: _selectedRoomTypeId,
+                        isExpanded: true,
+                        initialValue: _selectedRoomTypeId,
                         decoration: _inputDecoration(
                           'Room Type',
                           Icons.category,
@@ -250,7 +270,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                           return DropdownMenuItem<String>(
                             value: type['id'],
                             child: Text(
-                              '${type['name']} (Max: ${type['capacity']}, \$${type['price']})',
+                              '${type['name']} (Max: ${type['capacity']}, ₦${type['price']})',
                               overflow: TextOverflow.ellipsis,
                             ),
                           );
@@ -259,6 +279,17 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                             setState(() => _selectedRoomTypeId = value),
                         validator: (value) =>
                             value == null ? 'Please select a room type' : null,
+                      ),
+                      const SizedBox(height: 16),
+                      TextFormField(
+                        controller: _customPriceController,
+                        keyboardType: TextInputType.numberWithOptions(
+                          decimal: true,
+                        ),
+                        decoration: _inputDecoration(
+                          'Custom Price (Overrides Room Type Default)',
+                          Icons.attach_money,
+                        ),
                       ),
                     ],
                   ),
@@ -283,7 +314,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
                         ? 'Room can be booked by students'
                         : 'Room is unavailable/under maintenance',
                   ),
-                  activeColor: Theme.of(context).primaryColor,
+                  activeThumbColor: Theme.of(context).primaryColor,
                   value: _isAvailable,
                   onChanged: (value) => setState(() => _isAvailable = value),
                 ),
@@ -440,6 +471,7 @@ class _AddEditRoomScreenState extends State<AddEditRoomScreen> {
   @override
   void dispose() {
     _nameController.dispose();
+    _customPriceController.dispose();
     super.dispose();
   }
 }
